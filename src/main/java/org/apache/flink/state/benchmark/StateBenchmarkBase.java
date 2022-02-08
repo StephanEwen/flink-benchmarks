@@ -48,18 +48,21 @@ import static org.apache.flink.state.benchmark.StateBenchmarkConstants.setupKeys
 /** Base implementation of the state benchmarks. */
 public class StateBenchmarkBase extends BenchmarkBase {
     // TODO: why AtomicInteger?
-    static AtomicInteger keyIndex;
+    static int keyIndex;
     final ThreadLocalRandom random = ThreadLocalRandom.current();
 
-    @Param({"HEAP", "ROCKSDB"})
+    @Param({"HEAP"})
     protected StateBackendBenchmarkUtils.StateBackendType backendType;
+
+    @Param({"128", "16384"})
+    protected int maxParallelism;
 
     KeyedStateBackend<Long> keyedStateBackend;
 
     private static int getCurrentIndex() {
-        int currentIndex = keyIndex.getAndIncrement();
+        int currentIndex = keyIndex++;
         if (currentIndex == Integer.MAX_VALUE) {
-            keyIndex.set(0);
+            keyIndex = 0;
         }
         return currentIndex;
     }
@@ -73,29 +76,14 @@ public class StateBenchmarkBase extends BenchmarkBase {
     public static class KeyValue {
         long newKey;
         long setUpKey;
-        long mapKey;
-        double mapValue;
         long value;
-        List<Long> listValue;
 
         @Setup(Level.Invocation)
         public void kvSetup() {
             int currentIndex = getCurrentIndex();
             setUpKey = setupKeys.get(currentIndex % setupKeyCount);
             newKey = newKeys.get(currentIndex % newKeyCount);
-            mapKey = mapKeys.get(currentIndex % mapKeyCount);
-            mapValue = mapValues.get(currentIndex % mapKeyCount);
             value = randomValues.get(currentIndex % randomValueCount);
-            // TODO: singletonList is taking 25% of time in mapAdd benchmark... This shouldn't be
-            // initiated if benchmark is not using it and for the benchmarks that are using it,
-            // this should also be probably somehow avoided.
-            listValue =
-                    Collections.singletonList(randomValues.get(currentIndex % randomValueCount));
-        }
-
-        @TearDown(Level.Invocation)
-        public void kvTearDown() {
-            listValue = null;
         }
     }
 }

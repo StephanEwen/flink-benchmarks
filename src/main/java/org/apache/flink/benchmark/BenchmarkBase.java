@@ -39,7 +39,9 @@ import static org.openjdk.jmh.annotations.Scope.Thread;
             "-Djava.rmi.server.hostname=127.0.0.1",
             "-Dcom.sun.management.jmxremote.authenticate=false",
             "-Dcom.sun.management.jmxremote.ssl=false",
-            "-Dcom.sun.management.jmxremote.ssl"
+            "-Dcom.sun.management.jmxremote.ssl",
+            "-Xmx2g",
+            "-Xms2g"
         })
 @Warmup(iterations = 10)
 @Measurement(iterations = 10)

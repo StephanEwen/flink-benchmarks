@@ -20,6 +20,7 @@ package org.apache.flink.state.benchmark;
 
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.runtime.state.KeyGroupRange;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Setup;
@@ -30,21 +31,20 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.VerboseMode;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.flink.contrib.streaming.state.benchmark.StateBackendBenchmarkUtils.createKeyedStateBackend;
 import static org.apache.flink.contrib.streaming.state.benchmark.StateBackendBenchmarkUtils.getValueState;
 import static org.apache.flink.state.benchmark.StateBenchmarkConstants.setupKeyCount;
 
 /** Implementation for listValue state benchmark testing. */
-public class ValueStateBenchmark extends StateBenchmarkBase {
+public class KeyGroupedValueStateBenchmark extends StateBenchmarkBase {
     private ValueState<Long> valueState;
 
     public static void main(String[] args) throws RunnerException {
         Options opt =
                 new OptionsBuilder()
                         .verbosity(VerboseMode.NORMAL)
-                        .include(".*" + ValueStateBenchmark.class.getCanonicalName() + ".*")
+                        .include(".*" + KeyGroupedValueStateBenchmark.class.getCanonicalName() + ".*")
                         .build();
 
         new Runner(opt).run();
@@ -52,14 +52,14 @@ public class ValueStateBenchmark extends StateBenchmarkBase {
 
     @Setup
     public void setUp() throws Exception {
-        keyedStateBackend = createKeyedStateBackend(backendType);
+        keyedStateBackend = createKeyedStateBackend(backendType, KeyGroupRange.of(0, maxParallelism - 1), maxParallelism);
         valueState =
                 getValueState(keyedStateBackend, new ValueStateDescriptor<>("kvState", Long.class));
         for (int i = 0; i < setupKeyCount; ++i) {
             keyedStateBackend.setCurrentKey((long) i);
             valueState.update(random.nextLong());
         }
-        keyIndex = new AtomicInteger();
+        keyIndex = 0;
     }
 
     @Benchmark
